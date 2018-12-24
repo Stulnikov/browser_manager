@@ -17,10 +17,9 @@ class Driver():
 
     @property
     def driver(self) -> WebDriver:
-        if self.__driver:
-            return self.__driver
-        else:
+        if not self.__driver:
             raise WebDriverException('The browser is not open')
+        return self.__driver
 
     @driver.setter
     def driver(self, web_driver: WebDriver):
