@@ -41,7 +41,6 @@ class Driver():
 
     @driver.deleter
     def driver(self):
-        del self.__driver
         self.__driver = None
 
 
