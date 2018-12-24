@@ -1,4 +1,4 @@
-from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.remote.webdriver import WebDriver
 
 
@@ -12,65 +12,83 @@ class Singleton(type):
 
 
 class Driver():
+    def __init__(self):
+        self.__driver = None
+
     @property
     def driver(self) -> WebDriver:
-        return self._driver
+        if self.__driver:
+            return self.__driver
+        else:
+            raise WebDriverException('The browser is not open')
 
     @driver.setter
-    def driver(self, value):
-        self._driver = value
+    def driver(self, web_driver: WebDriver):
+        def close_browsers_with_exception(message):
+            try:
+                self.__driver.quit()
+                web_driver.quit()
+            except:
+                pass
+            raise WebDriverException(message)
+
+        if not isinstance(web_driver, WebDriver):
+            close_browsers_with_exception('The attribute passed must be WebDriver')
+
+        if self.__driver:
+            close_browsers_with_exception('The browser is already open')
+
+        self.__driver = web_driver
 
     @driver.deleter
     def driver(self):
-        del self._driver
+        del self.__driver
+        self.__driver = None
 
 
-class Browser(metaclass=Singleton):
+class BaseBrowser():
     def __init__(self):
-        self._driver = Driver()
-        self._executable_path = None
+        self.__driver = Driver()
 
-    def set_executable_path(self, path):
-        self._executable_path = path
-
-    def open_browser(self):
-        self._driver.driver = webdriver.Chrome(executable_path=self._executable_path)
+    def open_browser(self, driver):
+        self.__driver.driver = driver
 
     @property
     def driver(self) -> WebDriver:
-        return self._driver.driver
+        return self.__driver.driver
 
     def close_browser(self):
-        self._driver.driver.quit()
-        del self._driver.driver
+        self.__driver.driver.quit()
+        del self.__driver.driver
+
+
+class Browser(BaseBrowser, metaclass=Singleton):
+    def __init__(self):
+        super().__init__()
 
 
 class Browsers(metaclass=Singleton):
     def __init__(self):
         self.__active_browser = 1
-        self._first_driver = Driver()
-        self._second_driver = Driver()
-        self._executable_path = None
+        self.__first_browser = BaseBrowser()
+        self.__second_browser = BaseBrowser()
 
-    def set_executable_path(self, path):
-        self._executable_path = path
+    def open_browsers(self, first_driver, second_driver):
+        self.open_first_browser(first_driver)
+        self.open_second_browser(second_driver)
 
-    def open_browsers(self):
-        self.open_first_browser()
-        self.open_second_browser()
+    def open_first_browser(self, driver):
+        self.__first_browser.open_browser(driver)
 
-    def open_first_browser(self):
-        self._first_driver.driver = webdriver.Chrome(self._executable_path)
-
-    def open_second_browser(self):
-        self._second_driver.driver = webdriver.Chrome(self._executable_path)
+    def open_second_browser(self, driver):
+        self.__second_browser.open_browser(driver)
 
     @property
     def driver(self) -> WebDriver:
         if self.__active_browser == 1:
-            return self._first_driver.driver
+            return self.__first_browser.driver
         elif self.__active_browser == 2:
-            return self._second_driver.driver
+            return self.__second_browser.driver
 
     def switch_to_first_browser(self):
         self.__active_browser = 1
@@ -79,12 +97,10 @@ class Browsers(metaclass=Singleton):
         self.__active_browser = 2
 
     def close_first_browser(self):
-        self._first_driver.driver.quit()
-        del self._first_driver.driver
+        self.__first_browser.driver.quit()
 
     def close_second_browser(self):
-        self._second_driver.driver.quit()
-        del self._second_driver.driver
+        self.__second_browser.driver.quit()
 
     def close_browsers(self):
         self.close_first_browser()
