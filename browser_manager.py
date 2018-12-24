@@ -178,3 +178,4 @@ class BrowserManager(metaclass=Singleton):
     def close_browsers(self):
         for key, value in self.__browsers.items():
             self.__browsers[key].quit()
+        self.__browsers = {}
