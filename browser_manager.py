@@ -145,13 +145,11 @@ class BrowserManager(metaclass=Singleton):
 
     def open_browser(self, web_driver: WebDriver, browser_name='default'):
         if not isinstance(web_driver, WebDriver):
-            self.close_browsers()
-            raise WebDriverException('The attribute passed must be WebDriver')
+            self._close_browsers_with_exception('The attribute passed must be WebDriver')
 
         if browser_name in self.__browsers:
             self.__browsers['duplicate'] = web_driver
-            self.close_browsers()
-            raise WebDriverException('The browser is already open')
+            self._close_browsers_with_exception('The browser with name: "{}" is already open'.format(browser_name))
 
         self.__browsers[browser_name] = web_driver
         self.__default_browser = browser_name
@@ -165,17 +163,13 @@ class BrowserManager(metaclass=Singleton):
 
     def switch_to(self, browser_name):
         if browser_name not in self.__browsers:
-            raise WebDriverException('The browser is not open')
+            self._close_browsers_with_exception('The browser with name: "{}" is not open'.format(browser_name))
 
         self.__default_browser = browser_name
 
-    def close_browser(self, browser_name='default'):
-        if browser_name not in self.__browsers:
-            raise WebDriverException('The browser is not open')
-
-        self.__browsers[browser_name].quit()
-
     def close_browsers(self):
-        for key, value in self.__browsers.items():
-            self.__browsers[key].quit()
-        self.__browsers = {}
+        [self.__browsers.pop(i).quit() for i in list(self.__browsers) if self.__browsers]
+
+    def _close_browsers_with_exception(self, message):
+        self.close_browsers()
+        raise WebDriverException(message)
