@@ -40,7 +40,8 @@ class BrowserManager(metaclass=Singleton):
         self.__default_browser = browser_name
 
     def close_browsers(self):
-        [self.__browsers.pop(i).quit() for i in list(self.__browsers) if self.__browsers]
+        for i in list(self.__browsers):
+            self.__browsers.pop(i).quit()
 
     def _close_browsers_with_exception(self, message):
         self.close_browsers()
