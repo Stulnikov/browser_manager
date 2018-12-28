@@ -15,6 +15,10 @@ class BrowserManager(metaclass=Singleton):
     __browsers = {}
     __default_browser = None
 
+    def _close_browsers_with_exception(self, message):
+        self.close_browsers()
+        raise WebDriverException(message)
+
     def open_browser(self, web_driver: WebDriver, browser_name='default'):
         if not isinstance(web_driver, WebDriver):
             self._close_browsers_with_exception('The attribute passed must be WebDriver')
@@ -40,9 +44,6 @@ class BrowserManager(metaclass=Singleton):
         self.__default_browser = browser_name
 
     def close_browsers(self):
-        for i in list(self.__browsers):
-            self.__browsers.pop(i).quit()
-
-    def _close_browsers_with_exception(self, message):
-        self.close_browsers()
-        raise WebDriverException(message)
+        for key in self.__browsers.keys():
+            self.__browsers[key].quit()
+        self.__browsers = {}
